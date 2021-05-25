@@ -12,42 +12,51 @@ class Name(Field):
 
 
 class Phone(Field):
-    # хранит имя контакта в формате стринг
+    # хранит телефон в формате стринг
     def __init__(self, phone):
         self.value = phone
 
 
-class Record(UserDict):
-    data = dict()
+class Record():
 
-    def __init__(self, name):
-        self.data['name'] = Name(name)
-        self.data['phones'] = list()
+    def __init__(self, name, phone):
+        self.name = Name(name)
 
-    def add_phone(self, phone):
-        # может добавлять как 1 телефон так и список телефонов:
+        self.phones = list()
         if isinstance(phone, str):
-            self.data['phones'].append(Phone(phone))
+            self.phones.append(Phone(phone))
         elif isinstance(phone, list):
             for ph in phone:
-                self.data['phones'].append(Phone(ph))
+                self.phones.append(Phone(ph))
 
-    def remove_phone(self, phone):
-        self.data['phones'].remove(phone)
+    def get_phones(self):
+        phones_list = ''
+        for phone in self.phones:
+            phones_list += phone.value + " "
+        return phones_list
 
-    def edit_phone(self, old_phone, new_phone):
-        self.data['phones'].remove(old_phone)
-        self.data['phones'].append(Phone(new_phone))
+    def add_phone(self, phone):
+        self.phones.append(Phone(phone))
 
 
 class AddressBook(UserDict):
     # добавляет Record в self.data
-    def add_record(self, name, phones):
-        record = Record(name)
-        record.add_phone(phones)
-        self.data[record['name'].value] = record
 
-####################################################################################
+    def add_record(self, name, phones):
+        record = Record(name, phones)
+        self.data[record.name.value] = record
+
+    def get_phones(self, name):
+        return self.data[name].get_phones()
+
+    def add_phone(self, name, phone):
+        self.data[name].add_phone(phone)
+
+    def change_phone(self, name, phone):
+        self.data[name].phones = list()
+        self.data[name].add_phone(phone)
+
+################################################################################
 
 
 anya_book = AddressBook()
@@ -88,51 +97,51 @@ def parse_command_input(client_input):
     return command, name, telephone
 
 
-@input_error
+@ input_error
 def do_hello(name, telephone):
     return "How can I help you?"
 
 
-@input_error
+@ input_error
 def do_exit(name, telephone):
     return "Good bye!"
 
 
-@input_error
+@ input_error
 def add(name, telephone):
     if not name:
         raise TypeError('Name is empty. Try again.')
     elif anya_book.get(name):
-        raise TypeError('This name already exists. Try again.')
+        anya_book.add_phone(name, telephone)
     elif not telephone:
         raise TypeError('Telephone is empty. Try again.')
     else:
         anya_book.add_record(name, telephone)
-    return "I have saved "+anya_book[name]['phones'][0].value + " as a telephone of "+name
+    return "I have saved " + anya_book.get_phones(name) + "as a telephone of "+name
 
 
-@input_error
+@ input_error
 def change(name, telephone):
     if not telephone:
         raise TypeError('Telephone is empty. Try again.')
     elif not anya_book.get(name):
         raise TypeError('This name does not exist. Try again.')
     else:
-        anya_book[name].edit_phone(anya_book[name]['phones'][0], telephone)
-    return "I have changed "+telephone + " as a telephone of " + name
+        anya_book.change_phone(name, telephone)
+    return "I have changed " + anya_book.get_phones(name) + "as a telephone of " + name
 
 
-@input_error
+@ input_error
 def find(name, telephone):
     if not name:
         raise TypeError('Name is empty. Try again.')
     elif not anya_book.get(name):
         raise TypeError('This name does not exist. Try again.')
     else:
-        return "The telephone of " + name + " is " + anya_book[name]['phones'][0].value
+        return "The telephone of " + name + " is " + anya_book.get_phones(name)
 
 
-@input_error
+@ input_error
 def show_all(name, telephone):
     if not anya_book:
         result = "The dictionary of telephones is empty"
@@ -140,7 +149,7 @@ def show_all(name, telephone):
         result = "The dictionary of telephones is following: \n"
         for key, record in anya_book.items():
             result = result + key + " have a tel " + \
-                record['phones'][0].value + "\n"
+                record.get_phones() + "\n"
         result = result.rstrip("\n")
     return result
 
